@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BioRed — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg class="leaf-deco leaf-deco-1" viewBox="0 0 200 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M100 0 C180 40 200 120 160 200 C120 280 40 300 20 260 C0 220 20 140 60 100 C100 60 120 20 100 0Z" fill="#4a963c"/>
+  <path d="M100 0 L80 180" stroke="#6dc95c" stroke-width="3" opacity="0.5"/>
+  <path d="M80 80 L20 140 M80 120 L140 160 M80 150 L30 190" stroke="#6dc95c" stroke-width="1.5" opacity="0.3"/>
+</svg>
+<svg class="leaf-deco leaf-deco-2" viewBox="0 0 200 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M100 0 C180 40 200 120 160 200 C120 280 40 300 20 260 C0 220 20 140 60 100 C100 60 120 20 100 0Z" fill="#4a963c"/>
+  <path d="M100 0 L80 180" stroke="#6dc95c" stroke-width="3" opacity="0.5"/>
+</svg>
+
+<div id="toast"></div>
+
+<div class="wrapper">
+
+  <header>
+    <div class="logo-area">
+      <h1>Bio<em>Red</em> <span style="font-size:0.6em">🌿</span></h1>
+      <p>Monitor ambiental · Cámara · Gases · Audio</p>
+    </div>
+    <div id="status-pill" class="status-pill">
+      <span class="status-dot"></span>
+      <span id="status-text">Desconectado</span>
+    </div>
+  </header>
+
+  <div class="ip-bar">
+    <label>IP del ESP32</label>
+    <input type="text" id="ip-input" placeholder="192.168.1.XXX" />
+    <button class="btn-connect" onclick="conectar()">Conectar</button>
+  </div>
+
+  <div class="sensor-grid">
+
+    <div class="card">
+      <span class="card-icon" style="color:var(--red)">🌡️</span>
+      <div class="card-label">Temperatura</div>
+      <div class="card-value" id="temp-val">--<span class="card-unit">°C</span></div>
+      <div class="card-sub" id="temp-sub">Esperando lectura…</div>
+    </div>
+
+    <div class="card">
+      <span class="card-icon" style="color:var(--blue)">💧</span>
+      <div class="card-label">Humedad relativa</div>
+      <div class="card-value" id="hum-val">--<span class="card-unit">%</span></div>
+      <div class="card-sub" id="hum-sub">Esperando lectura…</div>
+    </div>
+
+    <div class="card">
+      <span class="card-icon" style="color:var(--amber)">🫧</span>
+      <div class="card-label">CO2 (MQ135)</div>
+      <div class="card-value" id="co2-val">--<span class="card-unit">ppm</span></div>
+      <div class="card-sub" id="co2-sub">Esperando lectura…</div>
+    </div>
+
+    <div class="card">
+      <span class="card-icon" style="color:var(--green-2)">🎙️</span>
+      <div class="card-label">Nivel de audio</div>
+      <div class="card-value" id="audio-val">--<span class="card-unit">dB</span></div>
+      <div class="card-sub" id="audio-sub">Esperando lectura…</div>
+    </div>
+
+    <div class="card history-card">
+      <div class="history-header">
+        <div class="card-label" style="margin:0">Historial — últimas 30 lecturas</div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> Temp °C</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div> Humedad %</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div> CO2 ppm</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="sparkline"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="controls-section">
+    <div class="section-title">Control de cámara</div>
+    <div class="card controls-card">
+
+      <div class="dpad">
+        <button class="btn-dir dpad-up"    onclick="mover('ARRIBA')" title="Arriba">▲</button>
+        <button class="btn-dir dpad-left"  onclick="mover('IZQ')"    title="Izquierda">◄</button>
+        <div class="dpad-center">PAN<br>TILT</div>
+        <button class="btn-dir dpad-right" onclick="mover('DER')"    title="Derecha">►</button>
+        <button class="btn-dir dpad-down"  onclick="mover('ABAJO')"  title="Abajo">▼</button>
+      </div>
+
+      <div class="cam-live">
+        <div class="card-label" style="margin:0 0 0.4rem">Vista en vivo</div>
+        <img id="cam-stream" alt="stream" src="img/live.webp">
+        <div style="margin-top:0.6rem; display:flex; gap:0.5rem;">
+          <button class="btn-connect" onclick="iniciarLive()">Iniciar live</button>
+          <button class="btn-connect" style="background:var(--red)" onclick="detenerLive()">Cerrar live</button>
+        </div>
+      </div>
+
+      <div class="cam-info">
+        <div class="card-label" style="margin:0 0 0.4rem">Estado motores</div>
+        <div class="cam-info-row">Motor Pan (IZQ/DER) <span id="pan-state">—</span></div>
+        <div class="cam-info-row">Motor Tilt (ARR/ABA)<span id="tilt-state">—</span></div>
+        <div class="cam-info-row">Última acción <span id="last-action">—</span></div>
+        <div class="cam-info-row">Pasos por pulso
+          <select id="pasos-sel" style="background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:4px;padding:1px 4px;font-family:var(--font-mono)">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="device-bar">
+    <div class="device-chip">IP: <span id="d-ip">—</span></div>
+    <div class="device-chip">RSSI: <span id="d-rssi">—</span> dBm</div>
+    <div class="device-chip">Uptime: <span id="d-uptime">—</span></div>
+    <div class="device-chip">Versión: <span id="d-ver">—</span></div>
+    <div class="device-chip">Red: <span id="d-ssid">—</span></div>
+  </div>
+
+  <footer>
+    <strong>BioRed</strong> · Dashboard v3.1 (modular) · Actualización cada 5 s
+  </footer>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
