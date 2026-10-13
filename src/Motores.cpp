@@ -8,6 +8,15 @@ namespace {
 
   Stepper motorPan(PASOS_POR_REVOLUCION, 48, 21, 47, 20);
   Stepper motorTilt(PASOS_POR_REVOLUCION, 1, 42, 2, 41);
+
+  // Apaga las 4 bobinas de un motor para que no consuma corriente quieto.
+  // Deshabilitado a proposito: dejar las bobinas energizadas mantiene el par
+  // de sujecion, evitando que el motor se mueva solo por gravedad o un golpe
+  // externo. Descomentar si se prefiere ahorrar corriente sobre mantener posicion.
+  void liberarMotor(int a, int b, int c, int d) {
+    digitalWrite(a, LOW); digitalWrite(b, LOW);
+    digitalWrite(c, LOW); digitalWrite(d, LOW);
+  }
 }
 
 void motoresInit() {
@@ -30,6 +39,11 @@ bool motoresMover(const String& dir, int& pasos, String& error) {
     error = "Dirección inválida. Usa ARRIBA, ABAJO, IZQ o DER";
     return false;
   }
+
+  // Deshabilitado junto con liberarMotor() arriba: mantiene el par de
+  // sujecion del motor que se acaba de mover en vez de liberarlo.
+  if (dir == "ARRIBA" || dir == "ABAJO") liberarMotor(1, 42, 2, 41);   // tilt
+  else                                    liberarMotor(48, 21, 47, 20); // pan
 
   Serial.printf("[Motor] %s %d pasos\n", dir.c_str(), pasos);
   return true;

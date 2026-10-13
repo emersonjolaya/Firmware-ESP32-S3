@@ -53,6 +53,7 @@ WebServer server(80);
 
 void setup() {
   Serial.begin(115200);
+  Serial.printf("Motivo del ultimo reinicio: %d\n", esp_reset_reason());
   delay(2000);
   Serial.println("\n=== BioRed Firmware v3.1 (modular) ===");
 
