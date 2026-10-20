@@ -45,6 +45,7 @@
 #include "src/Camara.h"
 #include "src/Motores.h"
 #include "src/WebAPI.h"
+#include "src/EnvioAPI.h"
 
 const char* WIFI_SSID = "MontealegreRuiz_2.4G";
 const char* WIFI_PASS = "079794DmSmBm";
@@ -109,6 +110,7 @@ void setup() {
 
   server.begin();
   Serial.println("✔ Servidor web iniciado");
+  envioApiInit();
 }
 
 void loop() {
